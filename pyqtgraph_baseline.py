@@ -10,13 +10,13 @@ Copyright 2020 - 2020 NCST, NCST
 -----------
 @ 佛祖保佑，永无BUG--
 '''
-import sys, qdarkstyle
+import sys, qdarkstyle, wfdb
 from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout, QFrame,
-                             QSplitter, QWidget, QTextEdit, QVBoxLayout,
-                             QPushButton, QHBoxLayout, QLabel,QStyledItemDelegate,
-                             QLineEdit, QGridLayout, QComboBox)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
+                             QWidget, QTextEdit, QVBoxLayout, QPushButton, 
+                             QHBoxLayout, QLabel, QStyledItemDelegate,
+                             QGridLayout, QComboBox)
 import pyqtgraph as pg 
 import numpy as np
 from functools import partial
@@ -52,12 +52,12 @@ class MainWindow(QMainWindow):
 
         # 顶层按钮布局
         btn_layout = QHBoxLayout()
-        data_com = QComboBox()
+        self.data_com = QComboBox()
         delegate = QStyledItemDelegate()
-        data_com.setItemDelegate(delegate)
-        data_com.addItem("选择心电数据")
-        data_com.setFixedSize(300, 40)
-        data_com.setFont(font)
+        self.data_com.setItemDelegate(delegate)
+        self.data_com.addItem("选择心电数据")
+        self.data_com.setFixedSize(300, 40)
+        self.data_com.setFont(font)
         set_btn = QPushButton("设置")
         help_btn = QPushButton("帮助")
         save_btn = QPushButton("存储")
@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
         btn_list.append(help_btn)
         btn_list.append(save_btn)
         btn_list.append(back_btn)
-        btn_layout.addWidget(data_com)
+        btn_layout.addWidget(self.data_com)
         btn_layout.addWidget(set_btn)
         btn_layout.addWidget(help_btn)
         btn_layout.addWidget(save_btn)
@@ -77,15 +77,16 @@ class MainWindow(QMainWindow):
             btn.setFont(font)
             btn.setFixedSize(100, 40)
 
+        for i in range (1, 10):
+            self.data_com.addItem(str(100 + i))
+        
         # 绘图函数区域
         win = pg.GraphicsLayoutWidget()
-        p = win.addPlot()
-        p.getAxis("bottom").tickFont = font
-        p.getAxis("left").tickFont = font
+        self.p = win.addPlot()
+        self.p.getAxis("bottom").tickFont = font
+        self.p.getAxis("left").tickFont = font
         # 背景透明
         win.setBackground(background=None)
-        self.data = np.random.normal(size=300)
-        self.curve = p.plot(self.data)
         pagelayout.addWidget(win)
 
         # 设置最终的窗口布局与控件-------------------------------------
@@ -94,14 +95,46 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
         self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
 
+        # 计时器 当时间到了就出发绘图函数
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(50)
+        self.timer.start(20)
+
+        # 记录当前用户
+        self.people = ""
+        # 当用户改变时出发函数 重新绘图
+        self.data_com.currentIndexChanged.connect(self.show_)
+        self.flag = 0
+
+    def show_(self):
+        # 捕获当前用户
+        string = self.data_com.currentText()
+        self.people = string
+        self.p.clear()
+        # 重置为 0 方可读取数据
+        self.flag = 0
 
     def update(self):
-        self.data[:-1] = self.data[1:]
-        self.data[-1] = np.random.normal()
-        self.curve.setData(self.data)
+        if self.people == "":
+            pass
+        else:
+            # 第一次只读取 10000 数据
+            if self.flag == 0:
+                self.data = wfdb.rdrecord('MIT-BIH/mit-bih-database/' + self.people, sampfrom=0, sampto=10000, physical=False, channels=[0, ])
+                # 先取这么多数据
+                self.count = 250
+                data = self.data.d_signal[:self.count].reshape(self.count)
+                self.curve = self.p.plot(data)
+                self.flag += 1
+            # 第二次开始绘制，每次只绘制一个数据点
+            else:
+                self.count += 1
+                # 每次多取一个数据
+                data = self.data.d_signal[:self.count].reshape(self.count)
+                # 删除第一个数据 新加一个数据
+                data[:-1] = data[1:]
+                data[-1] = self.data.d_signal[self.count]
+                self.curve.setData(data)
 
 
 if __name__ == '__main__':
