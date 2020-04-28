@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QWidget, QTextEdit, QVBoxLayout, QPushButton, 
                              QHBoxLayout, QLabel, QStyledItemDelegate,
                              QGridLayout, QComboBox, QFrame, QSplitter,
-                             QStackedLayout, QRadioButton)
+                             QStackedLayout, QRadioButton, QSpinBox)
 import pyqtgraph as pg 
 import pyqtgraph.exporters
 import datetime
@@ -120,11 +120,26 @@ class MainWindow(QMainWindow):
 
         # 3. 设置
         set_widget = QWidget(bottom)
-        set_layout = QHBoxLayout()
+        set_layout = QVBoxLayout()
+        theme_layout = QHBoxLayout()
         self.theme_white_radio = QRadioButton("白色主题")
+        self.theme_white_radio.setFixedWidth(120)
         self.theme_black_radio = QRadioButton("黑色主题")
-        set_layout.addWidget(self.theme_white_radio)
-        set_layout.addWidget(self.theme_black_radio)
+        theme_label = QLabel("主题颜色选择")
+        theme_label.setFixedWidth(120)
+        theme_layout.addWidget(theme_label)
+        theme_layout.addWidget(self.theme_white_radio)
+        theme_layout.addWidget(self.theme_black_radio)
+        line_width_layout = QHBoxLayout()
+        line_width = QLabel("设置线宽(范围1-4)")
+        line_width.setFixedWidth(150)
+        line_width_layout.addWidget(line_width)
+        self.line_width_spin = QSpinBox()
+        self.line_width_spin.setMinimum(1)
+        self.line_width_spin.setMaximum(4)
+        line_width_layout.addWidget(self.line_width_spin)
+        set_layout.addLayout(theme_layout)
+        set_layout.addLayout(line_width_layout)
         set_widget.setLayout(set_layout)
         self.bottom_layout.addWidget(set_widget)
         self.theme_white_radio.toggled.connect(self.change_status)
@@ -137,6 +152,9 @@ class MainWindow(QMainWindow):
         # 截图功能
         fig_btn.clicked.connect(self.save_fig)
 
+        # 回放功能
+        back_btn.clicked.connect(self.back_show)
+
         # 设置最终的窗口布局与控件-------------------------------------
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(top)
@@ -146,22 +164,32 @@ class MainWindow(QMainWindow):
         pagelayout.addWidget(splitter)
         widget.setLayout(pagelayout)
         self.setCentralWidget(widget)
-        
+
         # 计时器 当时间到了就出发绘图函数
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(20)
-
+        
         # 记录当前用户
         self.people = ""
         # 当用户改变时出发函数 重新绘图
-        self.data_com.currentIndexChanged.connect(self.show_ecg)
+        self.data_com.currentIndexChanged.connect(self.show_ecg1)
+        self.data_com.view().pressed.connect(self.show_ecg)
         # 读取数据的标志
         self.flag = 0
         # 帮助文档的标志
         self.help = 0
         # 暂停的标志
         self.stop = 0
+
+    def timer_(self):
+        self.timer.start(20)
+
+    def back_show(self):
+        self.p.clear()
+        self.flag = 0
+        self.stop = 0
+        self.stop_btn.setText("暂停")
+        self.timer_()
 
     def save_fig(self):
         exporter = pg.exporters.ImageExporter(self.p)
@@ -172,27 +200,32 @@ class MainWindow(QMainWindow):
         file_name = file_name.replace(":", "-")
         file_name = file_name + ".png"
         exporter.export(file_name)
-        
 
+    # 停止时关闭计时器
     def stop_(self):
-        print(self.stop)
         if self.stop == 0:
             self.stop = 1
             self.stop_btn.setText("启动")
+            self.timer.stop()
         else:
             self.stop = 0
+            self.timer.start()
             self.stop_btn.setText("暂停")
         
+    # 设置时停止计时器
     def set_(self):
+        self.timer.stop()
         self.bottom_layout.setCurrentIndex(2)
 
     def change_status(self):
+        self.timer.stop()
         if self.theme_white_radio.isChecked():
             self.setStyleSheet("")
         else:
             self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
 
     def show_help(self):
+        self.timer.stop()
         self.bottom_layout.setCurrentIndex(1)
         if (self.help == 0):
             self.help += 1
@@ -201,14 +234,17 @@ class MainWindow(QMainWindow):
                 for line in text:
                     self.help_text.append(line)
 
-    def show_ecg(self):
-        # 捕获当前用户
-        self.bottom_layout.setCurrentIndex(0)
+    def show_ecg1(self):
         string = self.data_com.currentText()
         self.people = string
         self.p.clear()
         # 重置为 0 方可读取数据
         self.flag = 0
+        self.timer_()
+
+    def show_ecg(self):
+        # 捕获当前用户
+        self.bottom_layout.setCurrentIndex(0)
 
     def update(self):
         if self.people == "":
@@ -224,7 +260,7 @@ class MainWindow(QMainWindow):
                 # 先取这么多数据
                 self.count = 250
                 data = self.data.d_signal[:self.count].reshape(self.count)
-                self.curve = self.p.plot(data)
+                self.curve = self.p.plot(data, pen=pg.mkPen(width=self.line_width_spin.value()))
                 self.flag += 1
             # 第二次开始绘制，每次只绘制一个数据点
             else:
@@ -248,3 +284,4 @@ if __name__ == '__main__':
 # https://github.com/conda-forge/pyqtgraph-feedstock/issues/10
 # https://github.com/pyqtgraph/pyqtgraph/issues/538
 # http://www.pyqtgraph.org/documentation/exporting.html
+# http://www.pyqtgraph.org/documentation/functions.html
