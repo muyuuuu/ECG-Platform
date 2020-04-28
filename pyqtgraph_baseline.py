@@ -16,7 +16,8 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QWidget, QTextEdit, QVBoxLayout, QPushButton, 
                              QHBoxLayout, QLabel, QStyledItemDelegate,
-                             QGridLayout, QComboBox)
+                             QGridLayout, QComboBox, QFrame, QSplitter,
+                             QStackedLayout, QRadioButton)
 import pyqtgraph as pg 
 import numpy as np
 from functools import partial
@@ -51,7 +52,9 @@ class MainWindow(QMainWindow):
         pagelayout = QVBoxLayout()
 
         # 顶层按钮布局
-        btn_layout = QHBoxLayout()
+        top = QFrame(self)
+        top.setFrameShape(QFrame.StyledPanel)
+        btn_layout = QHBoxLayout(top)
         self.data_com = QComboBox()
         delegate = QStyledItemDelegate()
         self.data_com.setItemDelegate(delegate)
@@ -62,16 +65,18 @@ class MainWindow(QMainWindow):
         help_btn = QPushButton("帮助")
         save_btn = QPushButton("存储")
         back_btn = QPushButton("回放")
+        self.stop_btn = QPushButton("暂停")
         btn_list.append(set_btn)
         btn_list.append(help_btn)
         btn_list.append(save_btn)
         btn_list.append(back_btn)
+        btn_list.append(self.stop_btn)
         btn_layout.addWidget(self.data_com)
         btn_layout.addWidget(set_btn)
         btn_layout.addWidget(help_btn)
         btn_layout.addWidget(save_btn)
+        btn_layout.addWidget(self.stop_btn)
         btn_layout.addWidget(back_btn)
-        pagelayout.addLayout(btn_layout)
 
         for btn in btn_list:
             btn.setFont(font)
@@ -80,21 +85,60 @@ class MainWindow(QMainWindow):
         for i in range (1, 10):
             self.data_com.addItem(str(100 + i))
         
-        # 绘图函数区域
+        # 底层布局
+        bottom = QFrame(self)
+        bottom.setFrameShape(QFrame.StyledPanel)
+        self.bottom_layout = QStackedLayout(bottom)
+
+        # 1. 绘图区域
+        plot_widget = QWidget(bottom)
+        plot_layout = QHBoxLayout()
         win = pg.GraphicsLayoutWidget()
         self.p = win.addPlot()
         self.p.getAxis("bottom").tickFont = font
         self.p.getAxis("left").tickFont = font
         # 背景透明
         win.setBackground(background=None)
-        pagelayout.addWidget(win)
+        plot_layout.addWidget(win)
+        plot_widget.setLayout(plot_layout)
+        self.bottom_layout.addWidget(plot_widget)
+
+        # 2. 帮助文档
+        help_widget = QWidget(bottom)
+        help_layout = QHBoxLayout()
+        self.help_text = QTextEdit()
+        self.help_text.setReadOnly(True)
+        help_layout.addWidget(self.help_text)
+        help_widget.setLayout(help_layout)
+        self.bottom_layout.addWidget(help_widget)
+        help_btn.clicked.connect(self.show_help)
+
+        # 3. 设置
+        set_widget = QWidget(bottom)
+        set_layout = QHBoxLayout()
+        self.theme_white_radio = QRadioButton("白色主题")
+        self.theme_black_radio = QRadioButton("黑色主题")
+        set_layout.addWidget(self.theme_white_radio)
+        set_layout.addWidget(self.theme_black_radio)
+        set_widget.setLayout(set_layout)
+        self.bottom_layout.addWidget(set_widget)
+        self.theme_white_radio.toggled.connect(self.change_status)
+        self.theme_black_radio.toggled.connect(self.change_status)
+        set_btn.clicked.connect(self.set_)
+
+        # 暂停与启动的切换
+        self.stop_btn.clicked.connect(self.stop_)
 
         # 设置最终的窗口布局与控件-------------------------------------
+        splitter = QSplitter(Qt.Vertical)
+        splitter.addWidget(top)
+        splitter.addWidget(bottom)
+
         widget = QWidget()
+        pagelayout.addWidget(splitter)
         widget.setLayout(pagelayout)
         self.setCentralWidget(widget)
-        self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-
+        
         # 计时器 当时间到了就出发绘图函数
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
@@ -103,11 +147,44 @@ class MainWindow(QMainWindow):
         # 记录当前用户
         self.people = ""
         # 当用户改变时出发函数 重新绘图
-        self.data_com.currentIndexChanged.connect(self.show_)
+        self.data_com.currentIndexChanged.connect(self.show_ecg)
+        # 读取数据的标志
         self.flag = 0
+        # 帮助文档的标志
+        self.help = 0
+        # 暂停的标志
+        self.stop = 0
 
-    def show_(self):
+    def stop_(self):
+        print(self.stop)
+        if self.stop == 0:
+            self.stop = 1
+            self.stop_btn.setText("启动")
+        else:
+            self.stop = 0
+            self.stop_btn.setText("暂停")
+        
+    def set_(self):
+        self.bottom_layout.setCurrentIndex(2)
+
+    def change_status(self):
+        if self.theme_white_radio.isChecked():
+            self.setStyleSheet("")
+        else:
+            self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+
+    def show_help(self):
+        self.bottom_layout.setCurrentIndex(1)
+        if (self.help == 0):
+            self.help += 1
+            with open ("help.txt", "r") as f:
+                text = f.readlines()
+                for line in text:
+                    self.help_text.append(line)
+
+    def show_ecg(self):
         # 捕获当前用户
+        self.bottom_layout.setCurrentIndex(0)
         string = self.data_com.currentText()
         self.people = string
         self.p.clear()
@@ -128,13 +205,14 @@ class MainWindow(QMainWindow):
                 self.flag += 1
             # 第二次开始绘制，每次只绘制一个数据点
             else:
-                self.count += 1
-                # 每次多取一个数据
-                data = self.data.d_signal[:self.count].reshape(self.count)
-                # 删除第一个数据 新加一个数据
-                data[:-1] = data[1:]
-                data[-1] = self.data.d_signal[self.count]
-                self.curve.setData(data)
+                if self.stop != 1:
+                    self.count += 1
+                    # 每次多取一个数据
+                    data = self.data.d_signal[:self.count].reshape(self.count)
+                    # 删除第一个数据 新加一个数据
+                    data[:-1] = data[1:]
+                    data[-1] = self.data.d_signal[self.count]
+                    self.curve.setData(data)
 
 
 if __name__ == '__main__':
