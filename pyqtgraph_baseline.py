@@ -19,6 +19,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QGridLayout, QComboBox, QFrame, QSplitter,
                              QStackedLayout, QRadioButton)
 import pyqtgraph as pg 
+import pyqtgraph.exporters
+import datetime
 import numpy as np
 from functools import partial
 
@@ -59,24 +61,27 @@ class MainWindow(QMainWindow):
         delegate = QStyledItemDelegate()
         self.data_com.setItemDelegate(delegate)
         self.data_com.addItem("选择心电数据")
-        self.data_com.setFixedSize(300, 40)
+        self.data_com.setFixedSize(200, 40)
         self.data_com.setFont(font)
         set_btn = QPushButton("设置")
         help_btn = QPushButton("帮助")
         save_btn = QPushButton("存储")
         back_btn = QPushButton("回放")
+        fig_btn = QPushButton("截图")
         self.stop_btn = QPushButton("暂停")
         btn_list.append(set_btn)
         btn_list.append(help_btn)
         btn_list.append(save_btn)
         btn_list.append(back_btn)
         btn_list.append(self.stop_btn)
+        btn_list.append(fig_btn)
         btn_layout.addWidget(self.data_com)
         btn_layout.addWidget(set_btn)
         btn_layout.addWidget(help_btn)
         btn_layout.addWidget(save_btn)
         btn_layout.addWidget(self.stop_btn)
         btn_layout.addWidget(back_btn)
+        btn_layout.addWidget(fig_btn)
 
         for btn in btn_list:
             btn.setFont(font)
@@ -129,6 +134,9 @@ class MainWindow(QMainWindow):
         # 暂停与启动的切换
         self.stop_btn.clicked.connect(self.stop_)
 
+        # 截图功能
+        fig_btn.clicked.connect(self.save_fig)
+
         # 设置最终的窗口布局与控件-------------------------------------
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(top)
@@ -154,6 +162,17 @@ class MainWindow(QMainWindow):
         self.help = 0
         # 暂停的标志
         self.stop = 0
+
+    def save_fig(self):
+        exporter = pg.exporters.ImageExporter(self.p)
+        exporter.parameters()['width'] = 1080
+        file_name = str(datetime.datetime.now())
+        file_name = file_name.replace(" ", "-")
+        file_name = file_name.replace(".", "-")
+        file_name = file_name.replace(":", "-")
+        file_name = file_name + ".png"
+        exporter.export(file_name)
+        
 
     def stop_(self):
         print(self.stop)
@@ -197,7 +216,11 @@ class MainWindow(QMainWindow):
         else:
             # 第一次只读取 10000 数据
             if self.flag == 0:
-                self.data = wfdb.rdrecord('MIT-BIH/mit-bih-database/' + self.people, sampfrom=0, sampto=10000, physical=False, channels=[0, ])
+                self.data = wfdb.rdrecord('MIT-BIH/mit-bih-database/' + self.people, 
+                                    sampfrom=0, 
+                                    sampto=10000, 
+                                    physical=False, 
+                                    channels=[0, ])
                 # 先取这么多数据
                 self.count = 250
                 data = self.data.d_signal[:self.count].reshape(self.count)
@@ -223,3 +246,5 @@ if __name__ == '__main__':
 
 # ref
 # https://github.com/conda-forge/pyqtgraph-feedstock/issues/10
+# https://github.com/pyqtgraph/pyqtgraph/issues/538
+# http://www.pyqtgraph.org/documentation/exporting.html
