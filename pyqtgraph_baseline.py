@@ -156,6 +156,9 @@ class MainWindow(QMainWindow):
         # 回放功能
         back_btn.clicked.connect(self.back_show)
 
+        # 保存数据功能
+        save_btn.clicked.connect(self.save_data)
+
         # 设置最终的窗口布局与控件-------------------------------------
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(top)
@@ -181,6 +184,9 @@ class MainWindow(QMainWindow):
         self.help = 0
         # 暂停的标志
         self.stop = 0
+
+    def save_data(self):
+        pass
 
     def timer_(self):
         self.timer.start(20)
