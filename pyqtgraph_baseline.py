@@ -17,7 +17,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QWidget, QTextEdit, QVBoxLayout, QPushButton, 
                              QHBoxLayout, QLabel, QStyledItemDelegate,
                              QGridLayout, QComboBox, QFrame, QSplitter,
-                             QStackedLayout, QRadioButton, QSpinBox)
+                             QStackedLayout, QRadioButton, QSpinBox, 
+                             QMessageBox)
 import pyqtgraph as pg 
 import pyqtgraph.exporters
 import datetime
@@ -200,6 +201,8 @@ class MainWindow(QMainWindow):
         file_name = file_name.replace(":", "-")
         file_name = file_name + ".png"
         exporter.export(file_name)
+        QMessageBox.information(None, ("友情提示"), ("保存完毕"),
+                        QMessageBox.Cancel)
 
     # 停止时关闭计时器
     def stop_(self):
