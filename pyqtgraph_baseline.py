@@ -185,6 +185,7 @@ class MainWindow(QMainWindow):
         # 暂停的标志
         self.stop = 0
 
+    # 选择区间断和数据，保存即可
     def save_data(self):
         pass
 
