@@ -214,7 +214,7 @@ class MainWindow(QMainWindow):
             return
         np.savetxt(filename, data)
 
-
+    # 只是打开保存的页面
     def save_widget_(self):
         self.timer.stop()
         self.bottom_layout.setCurrentIndex(3)

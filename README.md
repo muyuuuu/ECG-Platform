@@ -20,7 +20,7 @@ https://www.physionet.org/content/mitdb/1.0.0/
 - [x] Click the pause button will pause electrocardiogram play.
 - [x] Click the save button to store the current electrocardiogram as picture when the electrocardiogram is pausing.
 - [x] Click playback button will replay electrocardiogram.
-- [ ] Click save data button will save patient data.
+- [x] Click save data button will save patient data.
 - [ ] Filling the medical record form.
 
 ## Result
