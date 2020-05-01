@@ -1,20 +1,28 @@
-# 心电检测平台设计
+# ECG detection platform design
 
-读取数据，绘制病人的心率图像并展示在Qt中。
+## Data Source
 
-- mfdb
-- PyQt5
-- pyqtgraph
+https://www.physionet.org/content/mitdb/1.0.0/
+
+## Dependences
+
+- mfdb 2.2.1
+- PyQt5 5.14.2
+- pyqtgraph 0.10.0
+- qdarkstyle 2.8.1
+- python 3.8.2
+
+## Function
+
+- [x] Display the patient's electrocardiogram dynamically, triggered when the ComboBox changes the index which the index is the unique number of patient.
+- [x] The theme color and line width can be modified in the settings interface which Click the set button will open.
+- [x] Click the help button will open help documention.
+- [x] Click the pause button will pause electrocardiogram play.
+- [x] Click the save button to store the current electrocardiogram as picture when the electrocardiogram is pausing.
+- [x] Click playback button will replay electrocardiogram.
+- [ ] Click save data button will save patient data.
+- [ ] Filling the medical record form.
+
+## Result
 
 ![](1.gif)
-
-# 功能
-
-- ~~展示病人的心率图像，ComboBox更改时触发~~
-- ~~设置按钮更换主题~~
-- ~~帮助按钮查看帮助文档~~
-- ~~暂停播放：心率图像停止播放~~
-- ~~暂停后存储当前图像~~
-- ~~图像回放~~
-- 数据存储
-- 病例表填写
