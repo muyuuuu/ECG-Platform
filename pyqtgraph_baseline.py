@@ -10,7 +10,7 @@ Copyright 2020 - 2020 NCST, NCST
 -----------
 @ 佛祖保佑，永无BUG--
 '''
-import sys, qdarkstyle, wfdb, os
+import sys, qdarkstyle, wfdb, os, datetime, pyqtgraph.exporters
 from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
@@ -20,11 +20,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QStackedLayout, QRadioButton, QSpinBox, 
                              QMessageBox, QLineEdit, QFileDialog)
 import pyqtgraph as pg 
-import pyqtgraph.exporters
-import datetime
 import numpy as np
-from functools import partial
-
+import pandas as pd
 
 # 主窗口的类
 class MainWindow(QMainWindow):
@@ -208,11 +205,17 @@ class MainWindow(QMainWindow):
     def save_data(self):
         left = int(self.left_interval.text())
         right = int(self.right_interval.text())
-        data = self.data.d_signal[left : right]
+        print(self.people)
+        record = wfdb.rdrecord('MIT-BIH/mit-bih-database/' + self.people, physical=False, sampto=10)
+        data = record.d_signal
+        channels = data.shape[1]
+        # print(data)
+        columns = ["channel_" + str(i) for i in range(channels)]
+        df = pd.DataFrame(data, columns=columns)
         filename, _ = QFileDialog.getSaveFileName(self,  "文件保存",  os.getcwd(), "Text Files (*.csv)")
         if filename == "":
             return
-        np.savetxt(filename, data)
+        df.to_csv(filename)
 
     # 只是打开保存的页面
     def save_widget_(self):
