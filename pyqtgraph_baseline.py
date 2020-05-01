@@ -18,7 +18,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QHBoxLayout, QLabel, QStyledItemDelegate,
                              QGridLayout, QComboBox, QFrame, QSplitter,
                              QStackedLayout, QRadioButton, QSpinBox, 
-                             QMessageBox, QLineEdit, QFileDialog)
+                             QMessageBox, QLineEdit, QFileDialog, QTableWidget,
+                             QHeaderView, QTableWidgetItem)
 import pyqtgraph as pg 
 import numpy as np
 import pandas as pd
@@ -36,7 +37,7 @@ class MainWindow(QMainWindow):
         font.setFamily("Microsoft Yahei")
         font.setPointSize(11)
 
-        self.setFixedSize(900, 650)
+        self.setFixedSize(1000, 750)
 
         # 统一设置按钮的字体
         btn_list = []
@@ -66,6 +67,7 @@ class MainWindow(QMainWindow):
         save_btn = QPushButton("存储")
         back_btn = QPushButton("回放")
         fig_btn = QPushButton("截图")
+        patient_table_btn = QPushButton("病例表")
         self.stop_btn = QPushButton("暂停")
         btn_list.append(set_btn)
         btn_list.append(help_btn)
@@ -73,6 +75,7 @@ class MainWindow(QMainWindow):
         btn_list.append(back_btn)
         btn_list.append(self.stop_btn)
         btn_list.append(fig_btn)
+        btn_list.append(patient_table_btn)
         btn_layout.addWidget(self.data_com)
         btn_layout.addWidget(set_btn)
         btn_layout.addWidget(help_btn)
@@ -80,12 +83,16 @@ class MainWindow(QMainWindow):
         btn_layout.addWidget(self.stop_btn)
         btn_layout.addWidget(back_btn)
         btn_layout.addWidget(fig_btn)
+        btn_layout.addWidget(patient_table_btn)
 
         for btn in btn_list:
             btn.setFont(font)
             btn.setFixedSize(100, 40)
 
-        for i in range (1, 10):
+        # 以此统计病人数量
+        self.patient = 0
+        for i in range (0, 10):
+            self.patient += 1
             self.data_com.addItem(str(100 + i))
         
         # 底层布局
@@ -175,6 +182,22 @@ class MainWindow(QMainWindow):
         save_confirm_btn.clicked.connect(self.save_data)
         self.bottom_layout.addWidget(save_widget)
 
+        # 病例表的填写
+        table_widget = QWidget(bottom)
+        table_layout = QHBoxLayout()
+        self.patient_table = QTableWidget()
+        self.patient_table.setColumnCount(6)
+        self.patient_table.setRowCount(self.patient)
+        self.patient_table.setHorizontalHeaderLabels([
+            '标号', '房性早博', '室性早博', '心室融合心博', '右束支传导阻塞心博', '左束支传导阻塞心博'
+        ])
+        self.patient_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.patient_table.verticalHeader().setVisible(False)
+        table_layout.addWidget(self.patient_table)
+        table_widget.setLayout(table_layout)
+        self.bottom_layout.addWidget(table_widget)
+        patient_table_btn.clicked.connect(self.show_table)
+
         # 设置最终的窗口布局与控件-------------------------------------
         splitter = QSplitter(Qt.Vertical)
         splitter.addWidget(top)
@@ -201,6 +224,40 @@ class MainWindow(QMainWindow):
         # 暂停的标志
         self.stop = 0
 
+    def show_table(self):
+        # 这么多行
+        self.timer.stop()
+        self.bottom_layout.setCurrentIndex(4)
+        rows = self.patient
+        for row in range(0, rows):
+            item = QTableWidgetItem(str(100 + row))
+            self.patient_table.setItem(row, 0, item)
+            record = wfdb.rdann('MIT-BIH/mit-bih-database/' + str(100 + row), 
+                        "atr", 
+                        sampfrom=0, 
+                        sampto=20000)
+            A, V, F, R, L = 0, 0, 0, 0, 0
+            for index in record.symbol:
+                if index == 'A':
+                    A += 1
+                if index == "V":
+                    V += 1
+                if index == "F":
+                    V += 1
+                if index == "R":
+                    V += 1
+                if index == "L":
+                    V += 1
+            item = QTableWidgetItem(str(A))
+            self.patient_table.setItem(row, 1, item)
+            item = QTableWidgetItem(str(V))
+            self.patient_table.setItem(row, 2, item)
+            item = QTableWidgetItem(str(F))
+            self.patient_table.setItem(row, 3, item)
+            item = QTableWidgetItem(str(R))
+            self.patient_table.setItem(row, 4, item)
+            item = QTableWidgetItem(str(L))
+            self.patient_table.setItem(row, 5, item)
     # 选择区间断和数据，保存即可
     def save_data(self):
         left = int(self.left_interval.text())
