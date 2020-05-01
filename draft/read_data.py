@@ -1,6 +1,4 @@
-
 import wfdb
-import matplotlib.pyplot as plt
  
 # 读取本地的100号记录，从0到25000，通道0
 record = wfdb.rdrecord('MIT-BIH/105', sampfrom=0, sampto=25000, physical=False, channels=[0, ])
