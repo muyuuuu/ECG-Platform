@@ -10,7 +10,7 @@ Copyright 2020 - 2020 NCST, NCST
 -----------
 @ 佛祖保佑，永无BUG--
 '''
-import sys, qdarkstyle, wfdb
+import sys, qdarkstyle, wfdb, os
 from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGridLayout,
                              QHBoxLayout, QLabel, QStyledItemDelegate,
                              QGridLayout, QComboBox, QFrame, QSplitter,
                              QStackedLayout, QRadioButton, QSpinBox, 
-                             QMessageBox)
+                             QMessageBox, QLineEdit, QFileDialog)
 import pyqtgraph as pg 
 import pyqtgraph.exporters
 import datetime
@@ -157,7 +157,26 @@ class MainWindow(QMainWindow):
         back_btn.clicked.connect(self.back_show)
 
         # 保存数据功能
-        save_btn.clicked.connect(self.save_data)
+        save_widget = QWidget(bottom)
+        save_layout = QHBoxLayout()
+        save_label = QLabel("请选择保存数据的区间")
+        save_label.setFixedHeight(40)
+        self.left_interval = QLineEdit()
+        self.left_interval.setFixedHeight(40)
+        self.left_interval.setPlaceholderText("起始点,左区间")
+        self.right_interval = QLineEdit()
+        self.right_interval.setFixedHeight(40)
+        self.right_interval.setPlaceholderText("终止点,右区间")
+        save_confirm_btn = QPushButton("确认")
+        save_confirm_btn.setFixedHeight(40)
+        save_layout.addWidget(save_label)
+        save_layout.addWidget(self.left_interval)
+        save_layout.addWidget(self.right_interval)
+        save_layout.addWidget(save_confirm_btn)
+        save_widget.setLayout(save_layout)
+        save_btn.clicked.connect(self.save_widget_)
+        save_confirm_btn.clicked.connect(self.save_data)
+        self.bottom_layout.addWidget(save_widget)
 
         # 设置最终的窗口布局与控件-------------------------------------
         splitter = QSplitter(Qt.Vertical)
@@ -187,7 +206,18 @@ class MainWindow(QMainWindow):
 
     # 选择区间断和数据，保存即可
     def save_data(self):
-        pass
+        left = int(self.left_interval.text())
+        right = int(self.right_interval.text())
+        data = self.data.d_signal[left : right]
+        filename, _ = QFileDialog.getSaveFileName(self,  "文件保存",  os.getcwd(), "Text Files (*.csv)")
+        if filename == "":
+            return
+        np.savetxt(filename, data)
+
+
+    def save_widget_(self):
+        self.timer.stop()
+        self.bottom_layout.setCurrentIndex(3)
 
     def timer_(self):
         self.timer.start(20)
