@@ -258,17 +258,19 @@ class MainWindow(QMainWindow):
             self.patient_table.setItem(row, 4, item)
             item = QTableWidgetItem(str(L))
             self.patient_table.setItem(row, 5, item)
+
     # 选择区间断和数据，保存即可
     def save_data(self):
         left = int(self.left_interval.text())
         right = int(self.right_interval.text())
         print(self.people)
-        record = wfdb.rdrecord('MIT-BIH/mit-bih-database/' + self.people, physical=False, sampto=10)
+        record = wfdb.rdrecord('MIT-BIH/mit-bih-database/' + self.people, physical=False, sampto=100000)
         data = record.d_signal
+        data = data[left : right]
         channels = data.shape[1]
         # print(data)
         columns = ["channel_" + str(i) for i in range(channels)]
-        df = pd.DataFrame(data, columns=columns)
+        df = pd.DataFrame(data, columns=columns, index=range(left, right))
         filename, _ = QFileDialog.getSaveFileName(self,  "文件保存",  os.getcwd(), "Text Files (*.csv)")
         if filename == "":
             return
