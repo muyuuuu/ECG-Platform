@@ -37,7 +37,9 @@ class MainWindow(QMainWindow):
         font.setFamily("Microsoft Yahei")
         font.setPointSize(11)
 
-        self.setFixedSize(1000, 750)
+        self.setMinimumHeight(750)
+        self.setMinimumWidth(1000)
+        # self.setFixedSize(1000, 750)
 
         # 统一设置按钮的字体
         btn_list = []
@@ -186,10 +188,10 @@ class MainWindow(QMainWindow):
         table_widget = QWidget(bottom)
         table_layout = QHBoxLayout()
         self.patient_table = QTableWidget()
-        self.patient_table.setColumnCount(6)
+        self.patient_table.setColumnCount(9)
         self.patient_table.setRowCount(self.patient)
         self.patient_table.setHorizontalHeaderLabels([
-            '标号', '房性早博', '室性早博', '心室融合心博', '右束支传导阻塞心博', '左束支传导阻塞心博'
+            '标号', '年龄', '性别', '用药', '房性早博', '室性早博', '心室融合心博', '右束支传导阻塞心博', '左束支传导阻塞心博'
         ])
         self.patient_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.patient_table.verticalHeader().setVisible(False)
@@ -232,10 +234,19 @@ class MainWindow(QMainWindow):
         for row in range(0, rows):
             item = QTableWidgetItem(str(100 + row))
             self.patient_table.setItem(row, 0, item)
+            head = wfdb.rdheader('MIT-BIH/mit-bih-database/' + str(100 + row))
+            age, gender, _, _, _ = head.comments[0].split(" ")
+            item = QTableWidgetItem(str(age))
+            self.patient_table.setItem(row, 1, item)
+            item = QTableWidgetItem(str(gender))
+            self.patient_table.setItem(row, 2, item)
+            drugs = head.comments[1]
+            item = QTableWidgetItem(str(drugs))
+            self.patient_table.setItem(row, 3, item)
             record = wfdb.rdann('MIT-BIH/mit-bih-database/' + str(100 + row), 
                         "atr", 
                         sampfrom=0, 
-                        sampto=20000)
+                        sampto=650000)
             A, V, F, R, L = 0, 0, 0, 0, 0
             for index in record.symbol:
                 if index == 'A':
@@ -243,21 +254,21 @@ class MainWindow(QMainWindow):
                 if index == "V":
                     V += 1
                 if index == "F":
-                    V += 1
+                    F += 1
                 if index == "R":
-                    V += 1
+                    R += 1
                 if index == "L":
-                    V += 1
+                    L += 1
             item = QTableWidgetItem(str(A))
-            self.patient_table.setItem(row, 1, item)
-            item = QTableWidgetItem(str(V))
-            self.patient_table.setItem(row, 2, item)
-            item = QTableWidgetItem(str(F))
-            self.patient_table.setItem(row, 3, item)
-            item = QTableWidgetItem(str(R))
             self.patient_table.setItem(row, 4, item)
-            item = QTableWidgetItem(str(L))
+            item = QTableWidgetItem(str(V))
             self.patient_table.setItem(row, 5, item)
+            item = QTableWidgetItem(str(F))
+            self.patient_table.setItem(row, 6, item)
+            item = QTableWidgetItem(str(R))
+            self.patient_table.setItem(row, 7, item)
+            item = QTableWidgetItem(str(L))
+            self.patient_table.setItem(row, 8, item)
 
     # 选择区间断和数据，保存即可
     def save_data(self):
