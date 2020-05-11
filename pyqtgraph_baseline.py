@@ -193,7 +193,8 @@ class MainWindow(QMainWindow):
         self.patient_table.setHorizontalHeaderLabels([
             '标号', '年龄', '性别', '用药', '房性早博', '室性早博', '心室融合心博', '右束支传导阻塞心博', '左束支传导阻塞心博'
         ])
-        self.patient_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # self.patient_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.patient_table.resizeColumnsToContents()
         self.patient_table.verticalHeader().setVisible(False)
         table_layout.addWidget(self.patient_table)
         table_widget.setLayout(table_layout)
@@ -269,6 +270,7 @@ class MainWindow(QMainWindow):
             self.patient_table.setItem(row, 7, item)
             item = QTableWidgetItem(str(L))
             self.patient_table.setItem(row, 8, item)
+            self.patient_table.resizeColumnsToContents()
 
     # 选择区间断和数据，保存即可
     def save_data(self):
