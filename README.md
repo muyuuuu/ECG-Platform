@@ -26,3 +26,8 @@ https://www.physionet.org/content/mitdb/1.0.0/
 ## Result
 
 ![](1.gif)
+
+# Intro
+
+1. `draft` folder: only test code, not contained in main progarm.
+2. `python mainwindow.py` will run.
