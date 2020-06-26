@@ -10,6 +10,7 @@ Copyright 2020 - 2020 NCST, NCST
 -----------
 @ 佛祖保佑，永无BUG--
 '''
+
 import sys, qdarkstyle, wfdb, os, datetime, pyqtgraph.exporters
 from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QFont
